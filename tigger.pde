@@ -7,13 +7,13 @@
 
 
 
-int trig_l = 7;
-int trig_r = 12;
+int trig_f = 12;
+int trig_r = 7;
 // ultrasonic sensors ping array..
 
 // ultrasonic sensor reply
-int rx_l = 8;
-int rx_r = 13;
+int rx_f = 13;
+int rx_r = 8;
 
 
 int drivep1 = 10; 
@@ -21,11 +21,11 @@ int drivep2 = 9;
 int steerp1 = 6;
 int steerp2 = 5;
 //test
-int MIN_DISTANCE = 30;
-int EMERGENCY_DISTANCE = 10;
+int MIN_DISTANCE = 40;
+int EMERGENCY_DISTANCE = 20;
 
 //store variables
-int l,r;
+int F,R;
 
 
 
@@ -33,11 +33,11 @@ void setup() {
   
   
   //ping send
-  pinMode(trig_l, OUTPUT);
+  pinMode(trig_f, OUTPUT);
   pinMode(trig_r, OUTPUT);
   
   //echo receive
-  pinMode(rx_l, INPUT);
+  pinMode(rx_f, INPUT);
   pinMode(rx_r, INPUT);
   
   //motors
@@ -54,95 +54,131 @@ void loop() {
   ping();
 
   //output the distacne
-  Serial.print("LEFT: \t" );
-  Serial.print(l, DEC);
+  Serial.print("Front: \t" );
+  Serial.print(F, DEC);
   Serial.print("\t Right: \t");
-  Serial.println(r,DEC);
+  Serial.println(R,DEC);
   
   delay(brains());
   ///
 
 }
 int brains() {
-  if (l < EMERGENCY_DISTANCE || r < EMERGENCY_DISTANCE) {
-    //we need to reverse a little, turning the opposite way..
-    if (l > r) {
-      right(); // it's backwards on purpose!
+ 
+  if (F <= EMERGENCY_DISTANCE || R <= EMERGENCY_DISTANCE) {
+    //too close
+    if (F < EMERGENCY_DISTANCE && R < EMERGENCY_DISTANCE) {
+      right();
       reverse();
-    } else if ( r > l ) {
-      left(); //also backwards on purpose!
-      reverse();
-    } else {
-      //go back a little
-      center();
-      reverse();
+      delay(1000);
+      left();
+      forward();
+      return 500;
     }
-   return (int)300;
+    if (F > EMERGENCY_DISTANCE && R > EMERGENCY_DISTANCE) {
+      //wont run
+      return 10000;
+    }
+    if (F < EMERGENCY_DISTANCE && R > EMERGENCY_DISTANCE) {
+      //cannot, must reverse and turn left
+      right();
+      reverse();
+      delay(1000);
+            left();
+      forward();
+      return 500;
+    }
+    if (F > EMERGENCY_DISTANCE && R < EMERGENCY_DISTANCE) {
+      left();
+      forward();
+      return 300;
+    }
   } else {
-    if (l < MIN_DISTANCE || r < MIN_DISTANCE) {
-      //we need to turn, so lets turn.. but which way
-      if (l > r) {
-        //turn left
+    if (F <= MIN_DISTANCE || R <= MIN_DISTANCE) {
+      //time to turn if front is close
+      if(F > MIN_DISTANCE && R < MIN_DISTANCE) {
+        //go forward
+        center();
+        forward(); 
+        return 100;
+      }
+      if (F < MIN_DISTANCE && R < MIN_DISTANCE) {
+        /* turn left */
         left();
         forward();
-      } else if (r > l) {
-        //turn right
+        return 100;
+      }
+      if (F > MIN_DISTANCE && R > MIN_DISTANCE) {
+        //wont run
+
+        return 1000;
+      }
+      if (F < MIN_DISTANCE && R > MIN_DISTANCE) {
         right();
         forward();
-      } else {
-        //go straight
-        center();
-        forward();
+        return 100;
       }
     } else {
-      //go forward, cautiously
+      //go straight
       center();
       forward();
+      return 100;
     }
-    return (int)300;
   }
   
 }
 
 
 void forward() {
-  digitalWrite(drivep1,HIGH);
-  digitalWrite(drivep2,LOW);
+  analogWrite(drivep1, 255);
+  analogWrite(drivep2, 0);
+  //digitalWrite(drivep1,HIGH);
+  //digitalWrite(drivep2,LOW);
 }
 
 void reverse() {
-  digitalWrite(drivep1,LOW);
-  digitalWrite(drivep2,HIGH);
+  analogWrite(drivep1, 0);
+  analogWrite(drivep2, 255);
+  //digitalWrite(drivep1,LOW);
+  //digitalWrite(drivep2,HIGH);
 }
 void pause() {
- digitalWrite(drivep1,LOW);
- digitalWrite(drivep2,LOW);
+  analogWrite(drivep1, 0);
+  analogWrite(drivep2, 0);
+ //digitalWrite(drivep1,LOW);
+ //digitalWrite(drivep2,LOW);
 }
 void left() {
-  digitalWrite(steerp1,HIGH);
-  digitalWrite(steerp2,LOW);
+  analogWrite(steerp1, 255);
+  analogWrite(steerp2, 0);
+ // digitalWrite(steerp1,HIGH);
+  //digitalWrite(steerp2,LOW);
 
 }
 void right() {
-  digitalWrite(steerp1,LOW);
-  digitalWrite(steerp2,HIGH);
+    analogWrite(steerp1, 0);
+  analogWrite(steerp2, 255);
+  //digitalWrite(steerp1,LOW);
+  //digitalWrite(steerp2,HIGH);
 
 }
 
 void center() {
-  digitalWrite(steerp1,LOW);
-  digitalWrite(steerp2,LOW);
+  analogWrite(steerp1, 0);
+  analogWrite(steerp2, 0);
+ // digitalWrite(steerp1,LOW);
+  //digitalWrite(steerp2,LOW);
 }
 
 void ping() {
  //get a distance
-  digitalWrite(trig_l, LOW);
+  digitalWrite(trig_f, LOW);
   delayMicroseconds(2);
-  digitalWrite(trig_l, HIGH);
+  digitalWrite(trig_f, HIGH);
   delay(5);
-  digitalWrite(trig_l, LOW);
+  digitalWrite(trig_f, LOW);
 
-   l = microsecondsToCentimeters(pulseIn(rx_l, HIGH));
+   F = microsecondsToCentimeters(pulseIn(rx_f, HIGH));
  
   //get a distance
   digitalWrite(trig_r, LOW);
@@ -151,7 +187,7 @@ void ping() {
   delay(5);
   digitalWrite(trig_r, LOW);
 
-  r = microsecondsToCentimeters(pulseIn(rx_r, HIGH));
+  R = microsecondsToCentimeters(pulseIn(rx_r, HIGH));
 }
 
 
