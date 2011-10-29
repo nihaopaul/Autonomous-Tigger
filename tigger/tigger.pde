@@ -21,8 +21,8 @@ int drivep2 = 9;
 int steerp1 = 6;
 int steerp2 = 5;
 //test
-int MIN_DISTANCE = 40;
-int EMERGENCY_DISTANCE = 20;
+int MIN_DISTANCE = 50;
+int EMERGENCY_DISTANCE = 30;
 
 //store variables
 int F,R;
@@ -68,9 +68,9 @@ int brains() {
   if (F <= EMERGENCY_DISTANCE || R <= EMERGENCY_DISTANCE) {
     //too close
     if (F < EMERGENCY_DISTANCE && R < EMERGENCY_DISTANCE) {
-      right();
+      //right();
       reverse();
-      delay(1000);
+      delay(1300);
       left();
       forward();
       return 500;
@@ -81,9 +81,11 @@ int brains() {
     }
     if (F < EMERGENCY_DISTANCE && R > EMERGENCY_DISTANCE) {
       //cannot, must reverse and turn left
+      reverse();
+      delay(100);
       right();
       reverse();
-      delay(1000);
+      delay(1300);
             left();
       forward();
       return 500;
@@ -116,13 +118,13 @@ int brains() {
       if (F < MIN_DISTANCE && R > MIN_DISTANCE) {
         right();
         forward();
-        return 100;
+        return 200;
       }
     } else {
       //go straight
       center();
       forward();
-      return 100;
+      return 200;
     }
   }
   
@@ -130,7 +132,7 @@ int brains() {
 
 
 void forward() {
-  analogWrite(drivep1, 255);
+  analogWrite(drivep1, 180);
   analogWrite(drivep2, 0);
   //digitalWrite(drivep1,HIGH);
   //digitalWrite(drivep2,LOW);
