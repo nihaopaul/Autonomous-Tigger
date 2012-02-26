@@ -21,9 +21,11 @@ int drivep2 = 9;
 int steerp1 = 6;
 int steerp2 = 5;
 //test
-int MIN_DISTANCE = 50;
-int EMERGENCY_DISTANCE = 30;
+int MAX = 40;
+int MIN = 20;
 
+int SIDEMIN = 8;
+int SIDEMAX = 12;
 //store variables
 int F,R;
 
@@ -51,10 +53,11 @@ void setup() {
 }
 
 void loop() {
+  
   ping();
 
   //output the distacne
-  Serial.print("Front: \t" );
+ Serial.print("Front: \t" );
   Serial.print(F, DEC);
   Serial.print("\t Right: \t");
   Serial.println(R,DEC);
@@ -64,112 +67,81 @@ void loop() {
 
 }
 int brains() {
- 
-  if (F <= EMERGENCY_DISTANCE || R <= EMERGENCY_DISTANCE) {
-    //too close
-    if (F < EMERGENCY_DISTANCE && R < EMERGENCY_DISTANCE) {
-      //right();
-      reverse();
-      delay(1300);
-      left();
-      forward();
-      return 500;
-    }
-    if (F > EMERGENCY_DISTANCE && R > EMERGENCY_DISTANCE) {
-      //wont run
-      return 10000;
-    }
-    if (F < EMERGENCY_DISTANCE && R > EMERGENCY_DISTANCE) {
-      //cannot, must reverse and turn left
-      reverse();
-      delay(100);
-      right();
-      reverse();
-      delay(1300);
-            left();
-      forward();
-      return 500;
-    }
-    if (F > EMERGENCY_DISTANCE && R < EMERGENCY_DISTANCE) {
-      left();
-      forward();
-      return 300;
-    }
-  } else {
-    if (F <= MIN_DISTANCE || R <= MIN_DISTANCE) {
-      //time to turn if front is close
-      if(F > MIN_DISTANCE && R < MIN_DISTANCE) {
-        //go forward
-        center();
-        forward(); 
-        return 100;
-      }
-      if (F < MIN_DISTANCE && R < MIN_DISTANCE) {
-        /* turn left */
-        left();
-        forward();
-        return 100;
-      }
-      if (F > MIN_DISTANCE && R > MIN_DISTANCE) {
-        //wont run
 
-        return 1000;
-      }
-      if (F < MIN_DISTANCE && R > MIN_DISTANCE) {
-        right();
-        forward();
-        return 200;
-      }
-    } else {
-      //go straight
-      center();
-      forward();
-      return 200;
-    }
-  }
+ if (F > MAX) {
+   //lots of space at the front, lets follow the line
+   Serial.println(R);
+   if (R > SIDEMAX) {
+     left();
+   } else if(R < SIDEMIN) {
+     right();
+   } else {
+     center();
+   }
+   forward();
+ } else {
+   if (F < MIN) {
+     
+     if (R > SIDEMAX) {
+       right();
+     } else if(R < SIDEMIN) {
+       left();
+     } else {
+       center();
+     }
+     reverse();
+   } else {
+     
+     if (R > SIDEMAX) {
+       left();
+     } else if(R < SIDEMIN) {
+       right();
+     } else {
+       center();
+     }
+     forward();
+   }
+   
+
+ }
+ 
   
 }
 
 
 void forward() {
-  analogWrite(drivep1, 180);
+  analogWrite(drivep1, 255);
   analogWrite(drivep2, 0);
-  //digitalWrite(drivep1,HIGH);
-  //digitalWrite(drivep2,LOW);
+  Serial.println("forward");
+
 }
 
 void reverse() {
   analogWrite(drivep1, 0);
   analogWrite(drivep2, 255);
-  //digitalWrite(drivep1,LOW);
-  //digitalWrite(drivep2,HIGH);
+  Serial.println("reverse");
 }
 void pause() {
   analogWrite(drivep1, 0);
   analogWrite(drivep2, 0);
- //digitalWrite(drivep1,LOW);
- //digitalWrite(drivep2,LOW);
+  Serial.println("pause");
 }
 void left() {
   analogWrite(steerp1, 255);
   analogWrite(steerp2, 0);
- // digitalWrite(steerp1,HIGH);
-  //digitalWrite(steerp2,LOW);
+  Serial.println("left");
 
 }
 void right() {
     analogWrite(steerp1, 0);
   analogWrite(steerp2, 255);
-  //digitalWrite(steerp1,LOW);
-  //digitalWrite(steerp2,HIGH);
-
+  Serial.println("right");
 }
 
 void center() {
   analogWrite(steerp1, 0);
   analogWrite(steerp2, 0);
- // digitalWrite(steerp1,LOW);
-  //digitalWrite(steerp2,LOW);
+  Serial.println("center");
 }
 
 void ping() {
