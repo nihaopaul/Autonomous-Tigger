@@ -21,11 +21,11 @@ int drivep2 = 9;
 int steerp1 = 6;
 int steerp2 = 5;
 //test
-int MAX = 40;
+int MAX = 50;
 int MIN = 20;
 
-int SIDEMIN = 8;
-int SIDEMAX = 12;
+int SIDEMIN = 40;
+int SIDEMAX = 50;
 //store variables
 int F,R;
 
@@ -61,8 +61,8 @@ void loop() {
   Serial.print(F, DEC);
   Serial.print("\t Right: \t");
   Serial.println(R,DEC);
-  
-  delay(brains());
+  brains();
+
   ///
 
 }
@@ -110,7 +110,7 @@ int brains() {
 
 
 void forward() {
-  analogWrite(drivep1, 255);
+  analogWrite(drivep1, 100);
   analogWrite(drivep2, 0);
   Serial.println("forward");
 
@@ -118,7 +118,7 @@ void forward() {
 
 void reverse() {
   analogWrite(drivep1, 0);
-  analogWrite(drivep2, 255);
+  analogWrite(drivep2, 155);
   Serial.println("reverse");
 }
 void pause() {
@@ -127,14 +127,14 @@ void pause() {
   Serial.println("pause");
 }
 void left() {
-  analogWrite(steerp1, 255);
+  analogWrite(steerp1, 125);
   analogWrite(steerp2, 0);
   Serial.println("left");
 
 }
 void right() {
     analogWrite(steerp1, 0);
-  analogWrite(steerp2, 255);
+  analogWrite(steerp2, 120);
   Serial.println("right");
 }
 
