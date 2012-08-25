@@ -1,46 +1,53 @@
-/*
-  this is my code.. nihaopaul @ gmail o com
-  i will use it to win the race :D
-  
-  this is for 2 ultrasonic sensors mounted left and right front
+/* 
+  2012 / June / 30th
+  Paul Adams
+  XinCheJian RoboRacing
 */
 
 
 
-int trig_f = 12;
-int trig_r = 7;
-// ultrasonic sensors ping array..
+#include <OneWire.h>
+#include <AikoEvents.h>
+
+using namespace Aiko;
+
+
+int trig_fs = 7;
+int trig_ls = 6;
+int trig_rs = 5;
+
 
 // ultrasonic sensor reply
-int rx_f = 13;
-int rx_r = 8;
+int rx_fs = 4;
+int rx_ls = 3;
+int rx_rs = 2;
+
+int drivep1 = 13; 
+int drivep2 = 12; 
+int speeda = 10;
+int steerp1 = 11;
+int steerp2 = 8;
+int speedb = 9;
 
 
-int drivep1 = 10; 
-int drivep2 = 9; 
-int steerp1 = 6;
-int steerp2 = 5;
 //test
-int MAX = 50;
-int MIN = 20;
+int MAX = 30;
+int MIN = 15;
 
-int SIDEMIN = 40;
-int SIDEMAX = 50;
 //store variables
-int F,R;
-
-
+int FS,RS,LS = 0;
 
 void setup() {
   
-  
   //ping send
-  pinMode(trig_f, OUTPUT);
-  pinMode(trig_r, OUTPUT);
+  pinMode(trig_fs, OUTPUT);
+  pinMode(trig_ls, OUTPUT);
+  pinMode(trig_rs, OUTPUT);
   
   //echo receive
-  pinMode(rx_f, INPUT);
-  pinMode(rx_r, INPUT);
+  pinMode(rx_fs, INPUT);
+  pinMode(rx_ls, INPUT);
+  pinMode(rx_rs, INPUT);
   
   //motors
   pinMode(drivep1, OUTPUT);
@@ -50,120 +57,261 @@ void setup() {
   
   //serial output
   Serial.begin(9600);
+  analogWrite(speedb, 100);
+  
+  Events.addHandler(frontsensor, 20);  
+  Events.addHandler(rightsensor, 20); 
+  Events.addHandler(leftsensor, 20); 
+  Events.addHandler(brains, 10); 
+
+}
+
+
+
+void brains() {
+Serial.println(frd_or_rev());
+  switch ( frd_or_rev() ) {
+    case 1:    
+      switch ( left_or_right() ) {
+        case 0:
+          center();
+        break;
+        case 2:
+          left();
+        break;
+        case 1:
+          right();
+        break;
+      }
+      forward(40);
+    break;
+    case 2:
+      switch ( left_or_right() ) {
+        /* these are reversed when you reverse */
+        case 0:
+          center();
+        break;
+        case 1:
+          right();
+        break;
+        case 2:
+          left();
+        break;
+      }    
+      reverse(50);
+    break;
+    case 0:
+      switch ( left_or_right() ) {
+        case 0:
+          center();
+        break;
+        case 1:
+          left();
+        break;
+        case 2:
+          right();
+        break;
+      }
+      forward(40);
+    break;
+  }
+  
+    //output the distacne
+  Serial.print("Front: \t" );
+  Serial.print(FS, DEC);
+  Serial.print("\t Right: \t");
+  Serial.print(RS,DEC);
+  Serial.print("\t Left: \t");
+  Serial.println(LS,DEC);
+}
+
+int left_or_right() {
+  /*
+    which way can we turn?
+    1 = turn left
+    2 = turn right
+    0 = straight
+  */
+  if (LS == RS) {
+    //go straight
+    return 0; 
+  } else if (LS < RS) {
+    return 2; //left is smaller, turn right
+  } else if (LS > RS ) {
+    return 1; //left is bigger turn left
+  }
+  
+}
+
+int frd_or_rev() {
+  /*
+  can we go forward? 
+  should we go in reverse?
+    0 = turn
+    1 = forward
+    2 = reverse
+    
+  */
+  if (FS < MIN) {
+    return 2; //reverse, we are too close.
+  } else if (FS < MAX) {
+    return 0; //turn, we are in our comfort zone
+  } else {
+    return 1; //forward is fine.
+  }
 }
 
 void loop() {
-  
-  ping();
-
-  //output the distacne
- Serial.print("Front: \t" );
-  Serial.print(F, DEC);
-  Serial.print("\t Right: \t");
-  Serial.println(R,DEC);
-  brains();
-
-  ///
-
-}
-int brains() {
-
- if (F > MAX) {
-   //lots of space at the front, lets follow the line
-   Serial.println(R);
-   if (R > SIDEMAX) {
-     left();
-   } else if(R < SIDEMIN) {
-     right();
-   } else {
-     center();
-   }
-   forward();
- } else {
-   if (F < MIN) {
-     
-     if (R > SIDEMAX) {
-       right();
-     } else if(R < SIDEMIN) {
-       left();
-     } else {
-       center();
-     }
-     reverse();
-   } else {
-     
-     if (R > SIDEMAX) {
-       left();
-     } else if(R < SIDEMIN) {
-       right();
-     } else {
-       center();
-     }
-     forward();
-   }
-   
-
- }
- 
-  
+  Events.loop();
 }
 
 
-void forward() {
-  analogWrite(drivep1, 100);
-  analogWrite(drivep2, 0);
+
+void forward(int myspeed) {
+  /* speed @ 100% */
+  digitalWrite(drivep1, HIGH);
+  digitalWrite(drivep2, LOW);
+  int speeds = map(myspeed, 0,100,0,255);
+  analogWrite(speeda, speeds);
   Serial.println("forward");
-
 }
 
-void reverse() {
-  analogWrite(drivep1, 0);
-  analogWrite(drivep2, 155);
+void reverse(int myspeed) {
+  digitalWrite(drivep1, LOW);
+  digitalWrite(drivep2, HIGH);
+  int speeds = map(myspeed, 0,100,0,255);
+  analogWrite(speeda, speeds);
   Serial.println("reverse");
 }
 void pause() {
-  analogWrite(drivep1, 0);
-  analogWrite(drivep2, 0);
+  digitalWrite(drivep1, LOW);
+  digitalWrite(drivep2, LOW);
   Serial.println("pause");
 }
 void left() {
-  analogWrite(steerp1, 125);
-  analogWrite(steerp2, 0);
+  digitalWrite(steerp1, HIGH);
+  digitalWrite(steerp2, LOW);
   Serial.println("left");
 
 }
 void right() {
-    analogWrite(steerp1, 0);
-  analogWrite(steerp2, 120);
+  digitalWrite(steerp1, LOW);
+  digitalWrite(steerp2, HIGH);
   Serial.println("right");
 }
 
 void center() {
-  analogWrite(steerp1, 0);
-  analogWrite(steerp2, 0);
+  digitalWrite(steerp1, LOW);
+  digitalWrite(steerp2, LOW);
   Serial.println("center");
 }
 
-void ping() {
+void frontsensor() {
  //get a distance
-  digitalWrite(trig_f, LOW);
+  digitalWrite(trig_fs, LOW);
   delayMicroseconds(2);
-  digitalWrite(trig_f, HIGH);
+  digitalWrite(trig_fs, HIGH);
   delay(5);
-  digitalWrite(trig_f, LOW);
+  digitalWrite(trig_fs, LOW);
+  FS = microsecondsToCentimeters(pulseIn(rx_fs, HIGH));
 
-   F = microsecondsToCentimeters(pulseIn(rx_f, HIGH));
- 
-  //get a distance
-  digitalWrite(trig_r, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trig_r, HIGH);
-  delay(5);
-  digitalWrite(trig_r, LOW);
+  /*
+  Smoothing to stop hasty decissions
+  */
+   const int numReadings = 2; //need it responsive
+   static unsigned int readings[numReadings] = { 0 };
+   static unsigned int index = 0;                  // the index of the current reading
+   static unsigned int total = 0;                  // the running total
+   static unsigned int average = 0;                // the average
+  
 
-  R = microsecondsToCentimeters(pulseIn(rx_r, HIGH));
+   total= total - readings[index];
+   readings[index] = FS;
+   total= total + readings[index];
+   index = index + 1;
+  
+   if (index >= numReadings) {
+     index = 0;
+   }
+    average = total / numReadings;
+    FS = average;
+   
+  /*
+  end of smoothing
+  */
+  
 }
+void leftsensor() {
+  //get a distance
+  digitalWrite(trig_ls, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig_ls, HIGH);
+  delay(5);
+  digitalWrite(trig_ls, LOW);
 
+  LS = microsecondsToCentimeters(pulseIn(rx_ls, HIGH));
+  
+  /*
+  Smoothing to stop hasty decissions
+  */
+   const int numReadings = 2; //need it responsive
+   static unsigned int readings[numReadings] = { 0 };
+   static unsigned int index = 0;                  // the index of the current reading
+   static unsigned int total = 0;                  // the running total
+   static unsigned int average = 0;                // the average
+  
+
+   total= total - readings[index];
+   readings[index] = LS;
+   total= total + readings[index];
+   index = index + 1;
+  
+   if (index >= numReadings) {
+     index = 0;
+   }
+    average = total / numReadings;
+    LS = average;
+   
+  /*
+  end of smoothing
+  */
+  
+}
+void rightsensor() {
+  //get a distance
+  digitalWrite(trig_rs, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig_rs, HIGH);
+  delay(5);
+  digitalWrite(trig_rs, LOW);
+
+  RS = microsecondsToCentimeters(pulseIn(rx_rs, HIGH));
+  
+  /*
+  Smoothing to stop hasty decissions
+  */
+   const int numReadings = 2; //need it responsive
+   static unsigned int readings[numReadings] = { 0 };
+   static unsigned int index = 0;                  // the index of the current reading
+   static unsigned int total = 0;                  // the running total
+   static unsigned int average = 0;                // the average
+  
+
+   total= total - readings[index];
+   readings[index] = RS;
+   total= total + readings[index];
+   index = index + 1;
+  
+   if (index >= numReadings) {
+     index = 0;
+   }
+    average = total / numReadings;
+    RS = average;
+   
+  /*
+  end of smoothing
+  */
+}
 
 
 
